@@ -4,6 +4,8 @@ from src.config import REGLAS_NEGOCIO
 from src.agents import BotReintegro, BotAsistencia
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+import time
+from src.observability import log_evento, log_routing, log_error, log_guardrail
 
 class Estado(TypedDict):
     """Estado que viaja entre nodos de LangGraph."""
@@ -54,11 +56,13 @@ class Orquestador:
         org_id = state["org_id"]
         
         if org_id not in REGLAS_NEGOCIO:
+            log_guardrail(org_id, "org_rechazada", f"Organización {org_id} no autorizada")
             return {
                 **state,
                 "respuesta": f"Error: Organización '{org_id}' no autorizada"
             }
         
+        log_evento("org_validada", org_id)
         return state
     
     def _nodo_detectar_tipo(self, state: Estado) -> Estado:
@@ -72,6 +76,7 @@ class Orquestador:
         else:
             tipo = "asistencia"  # Default
         
+        log_routing(state["org_id"], state["mensaje"], tipo)
         return {**state, "tipo_solicitud": tipo}
     
     def _nodo_procesar_reintegro(self, state: Estado) -> Estado:
@@ -99,6 +104,8 @@ class Orquestador:
     def procesar(self, org_id: str, user_id: str, mensaje: str) -> str:
         """API pública: procesa un mensaje y devuelve respuesta."""
         
+        inicio = time.time()
+        
         estado_inicial = {
             "org_id": org_id,
             "user_id": user_id,
@@ -107,5 +114,18 @@ class Orquestador:
             "respuesta": ""
         }
         
-        resultado = self.app.invoke(estado_inicial)
-        return resultado["respuesta"]
+        try:
+            resultado = self.app.invoke(estado_inicial)
+            latencia_ms = (time.time() - inicio) * 1000
+            
+            log_evento(
+                "orquestador_completado",
+                org_id,
+                user_id=user_id,
+                latencia_ms=round(latencia_ms, 2)
+            )
+            
+            return resultado["respuesta"]
+        except Exception as e:
+            log_error(org_id, str(e), f"user_id={user_id}")
+            raise

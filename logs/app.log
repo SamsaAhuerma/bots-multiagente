@@ -1,0 +1,7 @@
+2026-08-24 21:25:25 - {"timestamp": "2026-08-24T21:25:25.668291", "evento": "org_validada", "org_id": "org_1"}
+2026-08-24 21:25:25 - {"timestamp": "2026-08-24T21:25:25.668857", "evento": "routing_decisi\u00f3n", "org_id": "org_1", "tipo_detectado": "reintegro", "mensaje_preview": "quiero reintegro de 50000"}
+2026-08-24 21:25:30 - {"timestamp": "2026-08-24T21:25:30.523428", "evento": "orquestador_completado", "org_id": "org_1", "user_id": "user_123", "latencia_ms": 4857.68}
+2026-08-24 21:36:06 - {"timestamp": "2026-08-24T21:36:06.151748", "evento": "org_validada", "org_id": "org_1"}
+2026-08-24 21:36:06 - {"timestamp": "2026-08-24T21:36:06.152384", "evento": "routing_decisi\u00f3n", "org_id": "org_1", "tipo_detectado": "reintegro", "mensaje_preview": "quiero reintegro de 50000"}
+2026-08-24 21:36:09 - {"timestamp": "2026-08-24T21:36:09.994752", "evento": "agente_ejecutado", "org_id": "org_1", "tipo_agente": "reintegro", "tokens_input": 6, "tokens_output": 136, "tokens_total": 142, "latencia_ms": 3574.52}
+2026-08-24 21:36:09 - {"timestamp": "2026-08-24T21:36:09.995142", "evento": "orquestador_completado", "org_id": "org_1", "user_id": "user_123", "latencia_ms": 3845.73}

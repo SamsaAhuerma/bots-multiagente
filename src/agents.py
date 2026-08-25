@@ -3,6 +3,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from src.config import REGLAS_NEGOCIO, MODEL, TEMPERATURE, ANTHROPIC_API_KEY
 from src.rag import OrganizacionRAG
 from langchain_openai import ChatOpenAI
+from src.observability import log_agente, contar_tokens
+import time
 
 class BotReintegro:
     def __init__(self, org_id: str):
@@ -24,7 +26,7 @@ class BotReintegro:
     
     def procesar(self, user_id: str, solicitud: str) -> str:
         """Procesa solicitud de reintegro."""
-        
+        inicio = time.time() 
         # Obtiene contexto de RAG de ESTA org
         contexto_rag = self.rag.obtener_contexto(solicitud)
         
@@ -56,7 +58,11 @@ Si no cumple requisitos, explica por qué y qué le falta.
             "contexto": contexto_rag,
             "solicitud": solicitud
         })
-        
+        latencia_ms = (time.time() - inicio) * 1000
+        tokens_in = contar_tokens(solicitud)
+        tokens_out = contar_tokens(respuesta.content)
+        log_agente(self.org_id, "reintegro", tokens_in, tokens_out, latencia_ms)
+
         return respuesta.content
 
 
@@ -82,6 +88,7 @@ class BotAsistencia:
     
     def procesar(self, user_id: str, solicitud: str) -> str:
         """Procesa solicitud de asistencia."""
+        inicio = time.time() 
         
         contexto_rag = self.rag.obtener_contexto(solicitud)
         
@@ -104,5 +111,9 @@ Responde de forma amable y clara. Proporciona información sobre coberturas y se
             "contexto": contexto_rag,
             "solicitud": solicitud
         })
+        latencia_ms = (time.time() - inicio) * 1000
+        tokens_in = contar_tokens(solicitud)
+        tokens_out = contar_tokens(respuesta.content)
+        log_agente(self.org_id, "asistenciaa", tokens_in, tokens_out, latencia_ms)    
         
         return respuesta.content
