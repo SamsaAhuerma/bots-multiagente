@@ -231,7 +231,7 @@ python scripts/analizar_logs.py
 
 ## Estado Actual (MVP)
 
-✅ **Funciona:**
+ **Funciona:**
 - Routing inteligente por org_id
 - Agentes especializados
 - RAG por organización
@@ -240,12 +240,12 @@ python scripts/analizar_logs.py
 - Guardrails (validación de org)
 - Docker
 
-⚠️ **Mock (no real aún):**
+ **Mock (no real aún):**
 - BD en memoria (pierde datos al reiniciar)
 - Chatwoot integración (stub)
 - Colasde atención (simuladas)
 
-❌ **No implementado (Fase 3):**
+ **No implementado (Fase 3):**
 - Tests E2E (flujos multi-turn complejos)
 - Integración Chatwoot real
 - PostgreSQL para persistencia
@@ -278,7 +278,7 @@ python scripts/analizar_logs.py
 
 ## Por Qué Este Diseño
 
-Este MVP me permite:
+Este MVP permite:
 
 - **Validar arquitectura antes de escalar:** Probar concepto con 3 orgs antes de meterme en 3 meses de desarrollo
 - **Entender trade-offs:** Monolito vs microservicios, árboles vs agentes, mock vs real
