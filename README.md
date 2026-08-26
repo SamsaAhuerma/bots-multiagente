@@ -120,7 +120,8 @@ Usuario (org_1) → Orquestador (¿quién eres? ¿qué necesitas? ¿Detecta org?
 
 ### ¿Por qué State Machine + BD para pedidos? 
 
-**Decisión:** Gestionar ciclo de vida (CREATED → PENDING_REVIEW → APPROVED → COMPLETED)
+**Decisión:** Gestionar ciclo de vida (CREATED -> PENDING_REVIEW -> APPROVED -> COMPLETED)
+
 **Nota de integración:** Este MVP usa BD en memoria. En producción, la lógica de pedidos vive en el backend que corresponda(ai-gateway o similar). El agente consulta vía MCP tools (`crear_refund`, `get_status`) que llaman a endpoints reales.
 
 **Razones:**
