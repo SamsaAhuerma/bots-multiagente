@@ -230,6 +230,25 @@ python scripts/analizar_logs.py
 
 ---
 
+## Cómo Probar
+
+### Opción 1: Script interactivo
+```bash
+python scripts/probar_bot.py
+```
+Podés modificar `scripts/probar_bot.py` para probar distintos mensajes, organizaciones y usuarios.
+
+### Opción 2: curl
+```bash
+curl -X POST "http://localhost:8000/chat?org_id=org_1&user_id=user_123&mensaje=quiero+reintegro+de+50000"
+```
+
+### Opción 3: Docker
+```bash
+docker-compose up --build
+python scripts/probar_bot.py
+```
+
 ## Estado Actual (MVP)
 
  **Funciona:**
@@ -270,7 +289,6 @@ python scripts/analizar_logs.py
 - Usuario crea pedido → consulta estado → operador aprueba → usuario notificado
 
 **Fase 3 (Producción):**
-- Conectar ai-gateway real (endpoints de tu backend)
 - PostgreSQL en lugar de memoria
 - Chatwoot real en lugar de mock
 - Observabilidad: Datadog o LangSmith
