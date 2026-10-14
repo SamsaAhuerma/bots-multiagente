@@ -1,39 +1,45 @@
 # Bots Multiagente - POC
 
-MVP de sistema multi-tenant con agentes especializados de IA, orquestación automática y observabilidad. 
+MVP de sistema multi-tenant con agentes especializados de IA, orquestación y observabilidad básica.
 
-**Estado:** POC funcional | **Objetivo:** Validar arquitectura antes de escalar a producción.
+**Estado:** POC funcional en entorno controlado | **Hipótesis pendiente de validación en producción.**
 
 ---
 
 ## ¿Qué es esto?
 
-Es un experimento arquitectónico. Tengo múltiples bots conversacionales que manejan procesos similares (reintegros, asistencia, reclamos) pero para distintas organizaciones con reglas de negocio diferentes. 
+Experimento para validar si una arquitectura multi-agent puede reemplazar múltiples bots con árboles de decisión.
 
-La pregunta fue: **¿Puedo diseñar una arquitectura que soporte N bots de forma escalable, mantenible y con mejor UX?**
+**Hipótesis:** Un orquestador + agentes especializados + RAG es más mantenible y escalable que bots independientes con lógica hardcodeada.
 
-La respuesta: **sí, pero requiere cambiar de paradigma (árboles → agentes + orquestación).**
+**Estado de la hipótesis:** Parcialmente validada en entorno controlado (3 orgs, datos mock, usuario único). Pendiente validar con carga real, usuarios concurrentes y datos productivos.
+
+**Lo que este POC NO prueba:**
+- Escalabilidad real (ChromaDB en memoria, BD en memoria)
+- Concurrencia (1 usuario a la vez)
+- Latencia bajo carga
+- Consistencia de datos en producción
+- Integración con sistemas reales
 
 ---
 
 ## El Problema Original
 
-**El problema de la arqui infelxible**:
+**No es código duplicado.** Es arquitectura inflexible:
 
-- **Árboles de decisión:** Cada nueva regla = extender rama, crece exponencialmente!
+- **Árboles de decisión:** Cada nueva regla = extender rama. Esto crece exponencialmente.
 - **No escalable:** Agregar organización = crear bot nuevo + mantener árbol completo
 - **Sin contexto:** Usuario vuelve días después, bot no recuerda. Sin persistencia multi-turn.
 - **UX limitada:** Experiencia conversacional simple. Sin comprensión de contexto complejo.
 - **Mantenimiento:** Cambios en lógica común requieren actualizar todos los bots
-- **Costos:** TE MI TA a imaginar con lo anterior!
 
 ---
 
 ## La Solución (Este Repo)
 
-**"N bots a 1 bot?".**
+**No es "N bots → 1 bot".**
 
-Ó: **Arquitectura que soporta N bots de forma escalable.**
+Es: **Arquitectura que soporta N bots de forma escalable.**
 
 **Componentes:**
 - 1 Orquestador inteligente (entiende contexto, rutea automáticamente)
@@ -42,7 +48,7 @@ La respuesta: **sí, pero requiere cambiar de paradigma (árboles → agentes + 
 - State Machine + persistencia (contexto multi-turn)
 
 ```
-Usuario (org_1) → Orquestador (¿quién eres? ¿qué necesitas? ¿Detecta org?)
+Usuario (org_1) → Orquestador (¿quién eres? ¿qué necesitas? ¿qué org?)
                      ↓
               Agente Reintegro (especialista)
                      ↓
@@ -62,21 +68,21 @@ Usuario (org_1) → Orquestador (¿quién eres? ¿qué necesitas? ¿Detecta org?
 
 ### ¿Por qué multi-agent en lugar de 1 bot genérico?
 
-**Decisión:** 3 agentes especializados (Reintegro, Asistencia, Reclamos, Otro)
+**Decisión:** 3 agentes especializados (Reintegro, Asistencia, Reclamos)
 
 **Razones:**
-- Cada agente es experto en su dominio, respuestas más precisas
-- Prompts más cortos, menos tokens, más barato!
+- Cada agente es experto en su dominio → respuestas más precisas
+- Prompts más cortos → menos tokens → más barato
 - Fácil de testear: modifico agente de reintegro sin tocar asistencia
 - Escalable: agregar nuevo proceso = agregar nuevo agente
 
 **Alternativa rechazada:** 1 agente genérico
-- Prompt gigante (mezcla todo), generico genera bolonqui!
+- Prompt gigante (mezcla todo)
 - Más tokens por consulta
 - Si falla reintegro, complica asistencia
 - Difícil debuggear
 
-**Costo:** Complejidad extra (composición, herencia). Mitigado con buenas prácticas (BotBase + especialización).
+**Costo:** Un poco más de código repetido. **Vale la pena.**
 
 ---
 
@@ -107,22 +113,19 @@ Usuario (org_1) → Orquestador (¿quién eres? ¿qué necesitas? ¿Detecta org?
 - Límites cambian frecuentemente (no quiero redeploy por cada cambio)
 - Búsqueda semántica: usuario pregunta "¿aire acondicionado?" → RAG busca en cobertura
 - Datos grandes sin explotar (3 orgs × 5 productos × 20 coberturas) = no cabe en config.py
-- Usar una tool no alcanzaría ya que aumentan los costos de lectura del LLM, el RAG optimiza esto.
 
 **Alternativa rechazada:** Hardcodear en config.py
 - Cambio de cobertura = git push (deploy nuevo)
 - Crece exponencialmente
 - Difícil mantener
 
-**Costo:** ChromaDB en memoria (pierde datos entre reinicios). **Para MVP está bien, producción se recomienda Pinecone!.**
+**Costo:** ChromaDB en memoria (pierde datos entre reinicios). **Para MVP está bien, producción → Pinecone.**
 
 ---
 
-### ¿Por qué State Machine + BD para pedidos? 
+### ¿Por qué State Machine + BD para pedidos?
 
-**Decisión:** Gestionar ciclo de vida (CREATED -> PENDING_REVIEW -> APPROVED -> COMPLETED)
-
-**Nota de integración:** Este MVP usa BD en memoria. En producción, la lógica de pedidos vive en el backend que corresponda(ai-gateway o similar). El agente consulta vía MCP tools (`crear_refund`, `get_status`) que llaman a endpoints reales.
+**Decisión:** Gestionar ciclo de vida (CREATED → PENDING_REVIEW → APPROVED → COMPLETED)
 
 **Razones:**
 - Usuario crea pedido, se va, vuelve días después
@@ -230,28 +233,9 @@ python scripts/analizar_logs.py
 
 ---
 
-## Cómo Probar
-
-### Opción 1: Script interactivo
-```bash
-python scripts/probar_bot.py
-```
-Podés modificar `scripts/probar_bot.py` para probar distintos mensajes, organizaciones y usuarios.
-
-### Opción 2: curl
-```bash
-curl -X POST "http://localhost:8000/chat?org_id=org_1&user_id=user_123&mensaje=quiero+reintegro+de+50000"
-```
-
-### Opción 3: Docker
-```bash
-docker-compose up --build
-python scripts/probar_bot.py
-```
-
 ## Estado Actual (MVP)
 
- **Funciona:**
+**Funciona:**
 - Routing inteligente por org_id
 - Agentes especializados
 - RAG por organización
@@ -260,12 +244,12 @@ python scripts/probar_bot.py
 - Guardrails (validación de org)
 - Docker
 
- **Mock (no real aún):**
+**Mock (no real aún):**
 - BD en memoria (pierde datos al reiniciar)
 - Chatwoot integración (stub)
 - Colasde atención (simuladas)
 
- **No implementado (Fase 3):**
+**No implementado (Fase 3):**
 - Tests E2E (flujos multi-turn complejos)
 - Integración Chatwoot real
 - PostgreSQL para persistencia
@@ -289,15 +273,33 @@ python scripts/probar_bot.py
 - Usuario crea pedido → consulta estado → operador aprueba → usuario notificado
 
 **Fase 3 (Producción):**
+- Conectar ai-gateway real (endpoints de tu backend)
 - PostgreSQL en lugar de memoria
 - Chatwoot real en lugar de mock
 - Observabilidad: Datadog o LangSmith
 
 ---
 
+## Decisiones Futuras Pendientes
+
+1. **¿Escalar a producción con Botmaker 3.0 o LangChain puro?**
+   - Botmaker: más rápido, vendor lock-in
+   - LangChain: más control, mantenimiento manual
+
+2. **¿Pinecone o Weaviate para RAG?**
+   - Pinecone: más simple, pero pago
+   - Weaviate: open source, más trabajo
+
+3. **¿Dónde vive la lógica de operador?**
+   - Chatwoot (gestor de tickets)
+   - Consola custom
+   - Ambos
+
+---
+
 ## Por Qué Este Diseño
 
-Este MVP permite:
+Estoy aprendiendo backend engineering + IA. Este MVP me permite:
 
 - **Validar arquitectura antes de escalar:** Probar concepto con 3 orgs antes de meterme en 3 meses de desarrollo
 - **Entender trade-offs:** Monolito vs microservicios, árboles vs agentes, mock vs real
@@ -306,7 +308,7 @@ Este MVP permite:
 
 Diseño pensado para crecer de 2 a 20 bots sin quebrar. Si algo falla con 8, fallaría peor con 50.
 
-**Es un POC. Está bien que no sea perfecto!!**
+**Es un POC. Está bien que no sea perfecto.**
 
 ---
 
